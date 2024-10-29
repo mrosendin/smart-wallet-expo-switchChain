@@ -1,6 +1,6 @@
 polyfillForWagmi();
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Section from "./components/section";
@@ -16,14 +16,16 @@ import {
   useConnect,
   useSignMessage,
   useDisconnect,
+  useChainId,
 } from "wagmi";
-import { base } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { useCapabilities } from "wagmi/experimental";
+import { useSwitchChain } from "wagmi";
 
 const PREFIX_URL = Linking.createURL("/");
 
 export const config = createConfig({
-  chains: [base],
+  chains: [base, baseSepolia],
   connectors: [
     createConnectorFromWallet({
       metadata: {
@@ -35,6 +37,7 @@ export const config = createConfig({
   ],
   transports: {
     [base.id]: http(),
+    [baseSepolia.id]: http(),
   },
 });
 
@@ -50,6 +53,12 @@ export default function WagmiDemo() {
     signMessage,
     reset,
   } = useSignMessage();
+  const { switchChain } = useSwitchChain();
+  const chainId = useChainId();
+
+  useEffect(() => {
+    console.log("chainId", chainId);
+  }, [chainId]);
 
   const { data: capabilities, error: capabilitiesError } = useCapabilities();
 
@@ -61,7 +70,7 @@ export default function WagmiDemo() {
       paddingRight: insets.right + 16,
       gap: 16,
     }),
-    [insets],
+    [insets]
   );
 
   return (
@@ -74,7 +83,7 @@ export default function WagmiDemo() {
       </Text>
       {address && (
         <Text style={{ fontSize: 16, fontWeight: "600", textAlign: "center" }}>
-          Connected ✅
+          Connected to {chainId} ✅
         </Text>
       )}
       <Section
@@ -105,6 +114,12 @@ export default function WagmiDemo() {
             key="useCapabilities"
             title="useCapabilities"
             result={JSON.stringify(capabilities ?? capabilitiesError, null, 2)}
+          />
+          <Section
+            key="useSwitchChain"
+            title="useSwitchChain"
+            result={JSON.stringify(switchChain, null, 2)}
+            onPress={() => switchChain({ chainId: baseSepolia.id })}
           />
         </>
       )}
